@@ -281,7 +281,15 @@
     display: flex; align-items: center; justify-content: center;
     color: var(--text3);
   }
-  .glass-btn.filled { background: rgba(96,165,250,0.15); border-color: rgba(96,165,250,0.7); color: #60a5fa; }
+  .fmt-btn {
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text2); border-radius: var(--radius-sm);
+    padding: 8px 18px; font-size: 13px; font-weight: 500;
+    cursor: pointer; font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+  }
+  .fmt-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
+
 </style>
 </head>
 <body>
@@ -378,6 +386,65 @@
 
 </div>
 
+<div id="page-export" class="page">
+  <h3 style="font-size:18px;font-weight:600;margin-bottom:6px;">Export data</h3>
+  <p style="font-size:13px;color:var(--text3);margin-bottom:20px;">Download your logs or send them by email.</p>
+
+  <!-- Date range -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;">
+    <div style="font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:12px;">Date range</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div>
+        <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:4px;">From</label>
+        <input type="date" id="exportFrom" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;"/>
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:4px;">To</label>
+        <input type="date" id="exportTo" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;"/>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+      <button class="qf-pill" onclick="setRange(7)">7 days</button>
+      <button class="qf-pill" onclick="setRange(14)">14 days</button>
+      <button class="qf-pill" onclick="setRange(30)">30 days</button>
+      <button class="qf-pill" onclick="setRange(0)">All</button>
+    </div>
+  </div>
+
+  <!-- Format -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;">
+    <div style="font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:12px;">File format</div>
+    <div style="display:flex;gap:8px;">
+      <button class="fmt-btn active" id="fmt-csv" onclick="setFmt('csv')">CSV</button>
+      <button class="fmt-btn" id="fmt-json" onclick="setFmt('json')">JSON</button>
+      <button class="fmt-btn" id="fmt-txt" onclick="setFmt('txt')">Text</button>
+    </div>
+    <div style="font-size:12px;color:var(--text3);margin-top:10px;" id="fmtDesc">CSV works great with Excel and Google Sheets.</div>
+  </div>
+
+  <!-- Preview -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <div style="font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:0.7px;">Preview</div>
+      <span style="font-size:12px;color:var(--text3);" id="previewCount">0 entries</span>
+    </div>
+    <pre id="exportPreview" style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);white-space:pre-wrap;word-break:break-all;max-height:120px;overflow:hidden;line-height:1.6;">–</pre>
+  </div>
+
+  <!-- Actions -->
+  <button class="submit-btn" onclick="downloadExport()" style="margin-bottom:10px;">⬇ Download file</button>
+
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;">
+    <div style="font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:12px;">Send by email</div>
+    <div class="form-group" style="margin-bottom:10px;">
+      <label>Email address</label>
+      <input type="email" id="exportEmail" placeholder="name@example.com" inputmode="email"/>
+    </div>
+    <button class="submit-btn" onclick="sendEmail()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);">✉ Open email app</button>
+    <p style="font-size:11px;color:var(--text3);margin-top:8px;line-height:1.5;">Opens a new message in your device's email app with your data in the body. You can copy it from there or save it as an attachment.</p>
+  </div>
+</div>
+
 <div id="page-stats" class="page">
   <h3 style="font-size:18px;font-weight:600;margin-bottom:16px;">This week</h3>
   <div class="week-grid" id="weekGrid"></div>
@@ -391,6 +458,9 @@
   </button>
   <button class="nav-tab" id="tab-stats" onclick="switchTab('stats')">
     <span class="ni">📊</span><span class="nl">Stats</span>
+  </button>
+  <button class="nav-tab" id="tab-export" onclick="switchTab('export')">
+    <span class="ni">📤</span><span class="nl">Export</span>
   </button>
 </div>
 
@@ -744,6 +814,7 @@ function switchTab(tab) {
   document.getElementById('page-'+tab).classList.add('active');
   document.getElementById('tab-'+tab).classList.add('active');
   if (tab === 'stats') renderStats();
+  if (tab === 'export') initExportPage();
 }
 
 // Stats page
@@ -807,6 +878,157 @@ function calcStreak() {
     else if (i > 0) break;
   }
   return streak;
+}
+
+// Export feature
+let exportFmt = 'csv';
+
+function setFmt(fmt) {
+  exportFmt = fmt;
+  document.querySelectorAll('.fmt-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('fmt-'+fmt).classList.add('active');
+  const descs = { csv:'CSV works great with Excel and Google Sheets.', json:'JSON is ideal for backups and technical use.', txt:'Human-readable format, easy to copy and paste.' };
+  document.getElementById('fmtDesc').textContent = descs[fmt];
+  updatePreview();
+}
+
+function setRange(days) {
+  const to = new Date();
+  const from = new Date();
+  if (days === 0) {
+    const dates = Object.keys(state.days).sort();
+    if (dates.length) {
+      document.getElementById('exportFrom').value = dates[0];
+      document.getElementById('exportTo').value = todayStr();
+    }
+  } else {
+    from.setDate(from.getDate() - (days-1));
+    document.getElementById('exportFrom').value = from.toISOString().slice(0,10);
+    document.getElementById('exportTo').value = to.toISOString().slice(0,10);
+  }
+  updatePreview();
+}
+
+function getExportDates() {
+  const from = document.getElementById('exportFrom').value || todayStr();
+  const to   = document.getElementById('exportTo').value   || todayStr();
+  const dates = [];
+  let d = new Date(from + 'T12:00:00');
+  const end = new Date(to + 'T12:00:00');
+  while (d <= end) {
+    dates.push(d.toISOString().slice(0,10));
+    d.setDate(d.getDate()+1);
+  }
+  return dates;
+}
+
+function buildRows() {
+  const dates = getExportDates();
+  const rows = [];
+  for (const date of dates) {
+    const day = state.days[date];
+    if (!day) continue;
+    for (const meal of MEALS) {
+      for (const item of (day.meals[meal.id] || [])) {
+        rows.push({ date, meal: meal.name, food: item.name, amount: item.amount||'', cal: Math.round(item.cal), prot: Math.round(item.prot), carb: Math.round(item.carb), fat: Math.round(item.fat) });
+      }
+    }
+  }
+  return rows;
+}
+
+function buildCSV(rows) {
+  const header = 'Date,Meal,Food,Amount,Calories (kcal),Protein (g),Carbs (g),Fat (g)';
+  const lines = rows.map(r => [r.date, r.meal, '"'+r.food+'"', r.amount, r.cal, r.prot, r.carb, r.fat].join(','));
+  return [header, ...lines].join('\n');
+}
+
+function buildJSON(rows) {
+  const grouped = {};
+  for (const r of rows) {
+    if (!grouped[r.date]) grouped[r.date] = { totals:{cal:0,prot:0,carb:0,fat:0}, meals:{} };
+    if (!grouped[r.date].meals[r.meal]) grouped[r.date].meals[r.meal] = [];
+    grouped[r.date].meals[r.meal].push({ food:r.food, amount:r.amount, cal:r.cal, prot:r.prot, carb:r.carb, fat:r.fat });
+    grouped[r.date].totals.cal  += r.cal;
+    grouped[r.date].totals.prot += r.prot;
+    grouped[r.date].totals.carb += r.carb;
+    grouped[r.date].totals.fat  += r.fat;
+  }
+  return JSON.stringify({ exportedAt: new Date().toISOString(), goals: state.goals, days: grouped }, null, 2);
+}
+
+function buildTXT(rows) {
+  const byDate = {};
+  for (const r of rows) {
+    if (!byDate[r.date]) byDate[r.date] = {};
+    if (!byDate[r.date][r.meal]) byDate[r.date][r.meal] = [];
+    byDate[r.date][r.meal].push(r);
+  }
+  let out = '=== CALORIE DIARY ===\n';
+  out += 'Exported: ' + new Date().toLocaleDateString('en') + '\n';
+  out += 'Calorie goal: ' + state.goals.cal + ' kcal/day\n\n';
+  for (const date of Object.keys(byDate).sort()) {
+    out += '──────────────────────\n';
+    out += date + '\n';
+    let dayTotal = 0;
+    for (const meal of MEALS) {
+      const items = byDate[date][meal.name];
+      if (!items || items.length === 0) continue;
+      out += '\n  ' + meal.icon + ' ' + meal.name + '\n';
+      for (const item of items) {
+        out += '    ' + item.food + (item.amount?' ('+item.amount+')':'') + '\n';
+        out += '    → ' + item.cal + ' kcal  P:' + item.prot + 'g  H:' + item.carb + 'g  R:' + item.fat + 'g\n';
+        dayTotal += item.cal;
+      }
+    }
+    out += '\n  Total: ' + Math.round(dayTotal) + ' kcal\n';
+  }
+  return out;
+}
+
+function getExportContent() {
+  const rows = buildRows();
+  if (exportFmt === 'csv')  return { content: buildCSV(rows),  ext:'csv',  mime:'text/csv' };
+  if (exportFmt === 'json') return { content: buildJSON(rows), ext:'json', mime:'application/json' };
+  return { content: buildTXT(rows), ext:'txt', mime:'text/plain' };
+}
+
+function updatePreview() {
+  const rows = buildRows();
+  document.getElementById('previewCount').textContent = rows.length + ' entries';
+  if (rows.length === 0) { document.getElementById('exportPreview').textContent = 'No entries for the selected date range.'; return; }
+  const { content } = getExportContent();
+  document.getElementById('exportPreview').textContent = content.slice(0, 400) + (content.length > 400 ? '\n…' : '');
+}
+
+function downloadExport() {
+  const { content, ext, mime } = getExportContent();
+  const blob = new Blob([content], { type: mime });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = 'calories-' + (document.getElementById('exportFrom').value||todayStr()) + '.' + ext;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function sendEmail() {
+  const email = document.getElementById('exportEmail').value.trim();
+  const { content, ext } = getExportContent();
+  const subject = encodeURIComponent('Calorie Tracker – export ' + new Date().toLocaleDateString('en'));
+  const body = encodeURIComponent('Hi,\n\nHere is your calorie tracking data.\n\n' + content.slice(0, 2000) + (content.length > 2000 ? '\n\n[See full data in the downloaded file]' : ''));
+  const mailto = 'mailto:' + email + '?subject=' + subject + '&body=' + body;
+  window.location.href = mailto;
+}
+
+function initExportPage() {
+  const to = todayStr();
+  const from = new Date(); from.setDate(from.getDate()-6);
+  document.getElementById('exportFrom').value = from.toISOString().slice(0,10);
+  document.getElementById('exportTo').value   = to;
+  document.getElementById('exportFrom').addEventListener('change', updatePreview);
+  document.getElementById('exportTo').addEventListener('change', updatePreview);
+  updatePreview();
 }
 
 // Init
