@@ -922,6 +922,12 @@ function getExportDates() {
   return dates;
 }
 
+function fmtDate(str) {
+  // Convert yyyy-mm-dd to dd-mm-yyyy
+  const [y,m,d] = str.split('-');
+  return d+'-'+m+'-'+y;
+}
+
 function buildRows() {
   const dates = getExportDates();
   const rows = [];
@@ -930,7 +936,7 @@ function buildRows() {
     if (!day) continue;
     for (const meal of MEALS) {
       for (const item of (day.meals[meal.id] || [])) {
-        rows.push({ date, meal: meal.name, food: item.name, amount: item.amount||'', cal: Math.round(item.cal), prot: Math.round(item.prot), carb: Math.round(item.carb), fat: Math.round(item.fat) });
+        rows.push({ date: fmtDate(date), meal: meal.name, food: item.name, amount: item.amount||'', cal: Math.round(item.cal), prot: Math.round(item.prot), carb: Math.round(item.carb), fat: Math.round(item.fat) });
       }
     }
   }
@@ -969,7 +975,7 @@ function buildTXT(rows) {
   out += 'Calorie goal: ' + state.goals.cal + ' kcal/day\n\n';
   for (const date of Object.keys(byDate).sort()) {
     out += '──────────────────────\n';
-    out += date + '\n';
+    out += fmtDate(date) + '\n';
     let dayTotal = 0;
     for (const meal of MEALS) {
       const items = byDate[date][meal.name];
@@ -1007,7 +1013,7 @@ function downloadExport() {
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
   a.href     = url;
-  a.download = 'calories-' + todayStr() + '.' + ext;
+  a.download = 'calories-' + fmtDate(todayStr()) + '.' + ext;
   a.click();
   URL.revokeObjectURL(url);
 }
