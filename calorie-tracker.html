@@ -1007,7 +1007,7 @@ function downloadExport() {
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
   a.href     = url;
-  a.download = 'calories-' + (document.getElementById('exportFrom').value||todayStr()) + '.' + ext;
+  a.download = 'calories-' + todayStr() + '.' + ext;
   a.click();
   URL.revokeObjectURL(url);
 }
